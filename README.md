@@ -44,7 +44,7 @@ example:
 ```javascript
 var srv = express();
 
-srv.use(ssr("path/to/root", getState));
+srv.use(ssr("path/to/root", getState).middleware);
 
 srv.get('/my-path', (req, res) => {
     res.respondWithPage("my-path-page.js", "page-argument");
@@ -97,12 +97,13 @@ the client side:
   (client).
 
 This means that your pages don't all need to `require("s-js")` and
-`require("surplus")`; you may just use them as needed.
+`require("surplus")`; you may just use them as if they were already imported.
 
 Pages must export an object, or a function that returns an object, with the
 following keys:
-* `body` - the body of page, which must be a DOM element supporting `outerHTML`.
-* `head` (_optional_) - an array of DOM elements (e.g. <link />) that should be
+* `body` - the body of the page, which must be a DOM element supporting
+  `outerHTML`.
+* `head` (_optional_) - an array of DOM elements (e.g. `<link />`) that should be
   in the head of the response.
 
 If the page exports a function, that function will be called with any additional
@@ -219,6 +220,8 @@ module.exports = (id) => {
   changes to the surplus compiler, it should be possible to use the DOM that was
   rendered on the server side with live [S.js] functions on the client side.
 * Rewrite in Typescript - to better match the [S.js] and [Surplus] code.
+* Add hooks for pre-processing source pages and minification/bundling of page
+  code.
 
 [Surplus]: https://github.com/adamhaile/surplus
 [express]: http://expressjs.com/
