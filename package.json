@@ -1,0 +1,12 @@
+{
+  "name": "surplus-ssr",
+  "version": "0.1.0",
+  "description": "SSR middleware using surplus.",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Alex Franchuk",
+  "license": "ISC",
+  "dependencies": {
+    "domino": "^2.0.2"
+  }
+}
