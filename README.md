@@ -3,6 +3,14 @@
 This library exposes a relatively simple implementation of SSR using
 [Surplus][].
 
+## Installation
+
+Either install through `npm`:
+```
+npm i --save surplus-ssr
+```
+or clone this repository and import `index.js`.
+
 ## Usage
 
 The default export of the library is a function that produces a middleware
