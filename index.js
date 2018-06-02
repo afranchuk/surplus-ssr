@@ -250,7 +250,7 @@ const serve = (rootPath, getState, options) => {
     const respondWithPage = (req, res, path, args) => {
         args = args || [];
         // Get the current state
-        const state = getState();
+        const state = getState(req);
         // Load the requested file in the cache
         const r = load(path);
         // Get the exports of page

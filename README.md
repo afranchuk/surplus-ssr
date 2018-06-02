@@ -20,7 +20,8 @@ function for use with server applications (e.g. [express][]).
 
 Return a middleware function for SSR using the given root path (path to the root
 of the content to server) and the given `getState` function, which should return
-the current state (more on this later).
+the current state given the request object (described more in [Writing
+Content](#writing-content)).
 
 Options may be an object with the following keys:
 * `clientJS` (`boolean`) - whether to emit client-side javascript (default:
@@ -80,7 +81,7 @@ In words: if the page exists as a javascript file (with the `.js` extension) it
 is used, otherwise if it exists as a directory and `index.js` exists in the
 directory, that is used. Otherwise the request fails.
 
-#### Writing Content
+#### <a name="writing-content"></a> Writing Content
 
 All code that is used for the webpage must use CommonJS/UMD modules. The loader
 has not yet been extended to support the experimental node ES6 modules. The code
@@ -100,7 +101,8 @@ the client side:
 * `S` - the loaded [S.js][] module.
 * `Surplus` - the loaded [Surplus][] module.
 * `STATE` - the state returned from the `getState` function passed to the
-  middleware constructor.
+  middleware constructor. The `getState` function is passed a single argument,
+  the request object.
 * `isServer` (`boolean`) - Whether the code is running on the server or not
   (client).
 
