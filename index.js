@@ -3,14 +3,16 @@ const vm = require('vm');
 const fs = require('fs');
 const path = require("path");
 
+const COMPILE_SURPLUS = {};
+
 const cache = {};
 var compiler = null;
-// Compile a file with the surplus compiler (set by serve())
+// Compile a file with the supplied compiler (set by serve())
 const compile = (file) => {
     if (!(file in cache)) {
         const data = fs.readFileSync(file, 'utf8');
         try {
-            cache[file] = compiler.compile(data);
+            cache[file] = compiler(data);
         }
         catch (err) {
             console.error("Error occurred when compiling " + file + ":");
@@ -49,16 +51,15 @@ const headtmpl = defer`
 // Template for the javascript source to be sent with client responses.
 const jstmpl = defer`
     <script type="text/javascript">
-        const STATE = ${'state'};
+        var STATE = ${'state'};
 
-        let require = null;
-        let S = null;
-        //let SArray = null;
-        let Surplus = null;
-        const isServer = false;
-        const modules = ${'modules'};
-        const loaded = {};
-        require = (n) => {
+        var require = null;
+        var S = null;
+        var Surplus = null;
+        var isServer = false;
+        var modules = ${'modules'};
+        var loaded = {};
+        require = function(n) {
             if (!(n in loaded)) {
                 loaded[n] = modules[n]();
             }
@@ -68,7 +69,7 @@ const jstmpl = defer`
         Surplus = require('surplus');
 
         function init() {
-            const root = require("__ROOT__").body;
+            var root = require("__ROOT__").body;
             document.body.replaceChild(root, document.body.firstChild);
         }
     </script>
@@ -80,6 +81,12 @@ const serve = (rootPath, getState, options) => {
         options.clientJS = true;
     if (typeof options.pageRoot != "string")
         options.pageRoot = "pages";
+    if (typeof options.compile == "boolean") {
+        if (options.compile) options.compile = [COMPILE_SURPLUS];
+        else options.compile = [];
+    }
+    else if (typeof options.compile != "object" || !(options.compile instanceof Array))
+        options.compile = [COMPILE_SURPLUS];
 
     // Find a node module in rootPath
     const findNodeModule = (n) => {
@@ -100,9 +107,16 @@ const serve = (rootPath, getState, options) => {
     };
 
     // Use the surplus version installed in rootPath
-    if (compiler === null) {
-        compiler = require(findNodeModule("surplus/compiler"));
-    }
+    const surplus_compiler = require(findNodeModule("surplus/compiler"));
+
+    // Create a compiler that runs the provided compile stages
+    const compile_steps = options.compile.map(f => f === COMPILE_SURPLUS ? surplus_compiler.compile : f);
+    compiler = s => {
+        for (const f of compile_steps) {
+            s = f(s);
+        }
+        return s;
+    };
 
     let scriptCtx = null;
     const rcache = {};
@@ -318,6 +332,8 @@ const serve = (rootPath, getState, options) => {
 
     return respond;
 };
+
+serve.COMPILE_SURPLUS = COMPILE_SURPLUS;
 
 module.exports = serve;
 

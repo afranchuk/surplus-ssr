@@ -28,6 +28,11 @@ Options may be an object with the following keys:
   `true`)
 * `pageRoot` (`string`) - the root, relative to `rootPath`, of pages and
   directories to serve (default: `"pages"`)
+* `compile` (`array`) - the steps to take when compiling files (default:
+  `[ssr.COMPILE_SURPLUS]`). Should be an array of functions that take the file
+  source as an argument and returns the modified/compiled source. The special
+  value `ssr.COMPILE_SURPLUS` can also be specified, which will use the surplus
+  compiler installed in `rootPath`. Compiled results are cached.
 
 The middleware function returned is of the typical form (taking two arguments, a
 request and a response). It does **not** use the common third argument (a
@@ -137,6 +142,15 @@ I've found this approach to work quite well even with high update rates and
 fairly large state objects (on the order of tens of thousands of individual
 pieces of state, however you may define that...).
 
+### Compiling Code
+
+By default, the surplus compiler is run on all source files. If
+`options.compile` is specified, those compile steps will be used on source
+files. This is useful, for instance, to run the Typescript compiler or Babel
+stages on source files when developing. Typically for release builds, you'll
+want to set `options.compile` to an empty array (or `false`) and
+pre-process/compile the files as part of the production build.
+
 ## Example Usage
 
 ### Server Code (using express)
@@ -144,6 +158,7 @@ pieces of state, however you may define that...).
 const express = require('express');
 const ssr = require('surplus-ssr');
 const path = require('path');
+const babel = require('babel-core');
 
 const listen_port = 8080;
 // Root is in the 'public' folder
@@ -164,11 +179,34 @@ const getState = () => {
     };
 };
 
+// Babel compiler, using babel-preset-env to target a set of browsers and
+// perform some minification.
+const compile_babel = s => {
+    return babel.transform(s, {
+        ast: false,
+        babelrc: false,
+        comments: false,
+        minified: true,
+        presets: [
+            ["env", {
+                "targets": {
+                    "browsers": [">0.5%", "not op_mini all", "not dead", "last 1 version"]
+                }
+            }]
+        ]
+    }).code;
+};
+
+// Middleware options
+const ssropts = {
+    compile: [ssr.COMPILE_SURPLUS, compile_babel]
+};
+
 // Render and serve page contents
 // Could omit 'middleware', in which case the following srv.get() calls could be
 // left out as well, and pages/index.js would work as expected. But pages/getId.js
 // wouldn't get arguments in that situation.
-srv.use(ssr(publicRoot, getState).middleware);
+srv.use(ssr(publicRoot, getState, ssropts).middleware);
 
 srv.get('/', (req, res) => { res.respondWithPage("pages/index.js"); });
 srv.get('/getId/:id', (req, res) => {
@@ -230,8 +268,6 @@ module.exports = (id) => {
   changes to the surplus compiler, it should be possible to use the DOM that was
   rendered on the server side with live [S.js] functions on the client side.
 * Rewrite in Typescript - to better match the [S.js] and [Surplus] code.
-* Add hooks for pre-processing source pages and minification/bundling of page
-  code.
 
 [Surplus]: https://github.com/adamhaile/surplus
 [express]: http://expressjs.com/
