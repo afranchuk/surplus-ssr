@@ -1,6 +1,6 @@
 {
   "name": "surplus-ssr",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "SSR middleware using surplus.",
   "main": "index.js",
   "scripts": {},

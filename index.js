@@ -106,18 +106,6 @@ const serve = (rootPath, getState, options) => {
         throw "Module not found: " + n;
     };
 
-    // Use the surplus version installed in rootPath
-    const surplus_compiler = require(findNodeModule("surplus/compiler"));
-
-    // Create a compiler that runs the provided compile stages
-    const compile_steps = options.compile.map(f => f === COMPILE_SURPLUS ? surplus_compiler.compile : f);
-    compiler = s => {
-        for (const f of compile_steps) {
-            s = f(s);
-        }
-        return s;
-    };
-
     let scriptCtx = null;
     const rcache = {};
 
@@ -219,6 +207,20 @@ const serve = (rootPath, getState, options) => {
         }
 
         return rcache[n];
+    };
+
+    // Use the surplus version installed in rootPath
+    const surplus_compiler = () => {
+        return load("surplus/compiler").result({},{});
+    };
+
+    // Create a compiler that runs the provided compile stages
+    const compile_steps = options.compile.map(f => f === COMPILE_SURPLUS ? surplus_compiler().compile : f);
+    compiler = s => {
+        for (const f of compile_steps) {
+            s = f(s);
+        }
+        return s;
     };
 
     // Recursively get all dependencies of the given entry point, and collapse
